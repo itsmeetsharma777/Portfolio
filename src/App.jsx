@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 const socialLinks = [
   {
@@ -378,6 +379,7 @@ function App() {
         </div>
         <p className="footer-signoff">Meet Sharma / 2026</p>
       </footer>
+      <Analytics />
     </main>
   );
 }
