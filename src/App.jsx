@@ -1,1189 +1,484 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const API_BASE = "http://localhost:5001/api";
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
-const expenseCategories = [
-  "Food",
-  "Transport",
-  "Housing",
-  "Shopping",
-  "Health",
-  "Entertainment",
-  "Education",
-  "Utilities",
-  "Other"
-];
-const incomeCategories = ["Salary", "Freelance", "Investment", "Gift", "Other"];
-const catEmoji = {
-  Food: "🍔",
-  Transport: "🚗",
-  Housing: "🏠",
-  Shopping: "🛍️",
-  Health: "💊",
-  Entertainment: "🎬",
-  Education: "📚",
-  Utilities: "💡",
-  Salary: "💼",
-  Freelance: "💻",
-  Investment: "📈",
-  Gift: "🎁",
-  Other: "💰"
-};
-const catColors = [
-  "#c8f065",
-  "#f06565",
-  "#65c8f0",
-  "#f0b865",
-  "#b065f0",
-  "#65f0b0",
-  "#f065b0",
-  "#65a3f0",
-  "#f0e065",
-  "#a3f065",
-  "#f0a365"
-];
-
-function fmt(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0
-  }).format(Number(amount || 0));
-}
-
-async function api(path, options = {}, userId) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {})
-  };
-
-  if (userId) {
-    headers["x-user-id"] = userId;
+const socialLinks = [
+  {
+    name: "GitHub",
+    handle: "@itsmeetsharma777",
+    href: "https://github.com/itsmeetsharma777",
+    icon: GithubIcon,
+    tone: "github"
+  },
+  {
+    name: "LinkedIn",
+    handle: "/in/meetsharma777",
+    href: "https://www.linkedin.com/in/meetsharma777",
+    icon: LinkedinIcon,
+    tone: "linkedin"
+  },
+  {
+    name: "LeetCode",
+    handle: "@itsmeetsharma",
+    href: "https://leetcode.com/u/itsmeetsharma/",
+    icon: LeetcodeIcon,
+    tone: "leetcode"
+  },
+  {
+    name: "Instagram",
+    handle: "@meetsharma777",
+    href: "https://www.instagram.com/meetsharma777/",
+    icon: InstagramIcon,
+    tone: "instagram"
   }
+];
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+const skillGroups = [
+  {
+    label: "Languages",
+    items: [
+      { name: "Java", icon: JavaIcon, tone: "java" },
+      { name: "C++", icon: CppIcon, tone: "cpp" },
+      { name: "Python", icon: PythonIcon, tone: "python" },
+      { name: "JavaScript", icon: JavaScriptIcon, tone: "javascript" }
+    ]
+  },
+  {
+    label: "Web stack",
+    items: [
+      { name: "React", icon: ReactIcon, tone: "react" },
+      { name: "Node.js", icon: NodeIcon, tone: "node" },
+      { name: "Express", icon: ExpressIcon, tone: "express" },
+      { name: "MongoDB", icon: MongoIcon, tone: "mongo" },
+      { name: "MySQL", icon: MysqlIcon, tone: "mysql" }
+    ]
+  },
+  {
+    label: "Frontend",
+    items: [
+      { name: "HTML5", icon: HtmlIcon, tone: "html" },
+      { name: "CSS3", icon: CssIcon, tone: "css" },
+      { name: "Git", icon: GitIcon, tone: "git" },
+      { name: "GitHub", icon: GithubIcon, tone: "github" }
+    ]
   }
+];
 
-  return data;
-}
+const projects = [
+  {
+    number: "01",
+    name: "EduSync",
+    type: "Full Stack Web Application",
+    date: "September 2025",
+    description:
+      "A personalized student progress tracker informed by attendance patterns and learning data, designed to make progress easier to understand.",
+    stack: ["React", "Node.js", "Express", "MongoDB"],
+    accent: "project-education"
+  },
+  {
+    number: "02",
+    name: "Gas Guard Pro",
+    type: "IoT Safety Project",
+    date: "March 2025",
+    description:
+      "A home-safety system that monitors gas continuously, activates exhaust fans, triggers alarms, and sends timely alerts.",
+    stack: ["Arduino", "MQ-2 Sensor", "C++", "Relay Module"],
+    accent: "project-iot"
+  }
+];
+
+const movingSkills = [
+  "React.js",
+  "Node.js",
+  "Express.js",
+  "MongoDB",
+  "JavaScript",
+  "Java",
+  "Python",
+  "REST APIs",
+  "Git & GitHub",
+  "Problem Solving"
+];
 
 function App() {
-  const [authMode, setAuthMode] = useState("login");
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("kite_current_user");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [transactions, setTransactions] = useState([]);
-  const [budgets, setBudgets] = useState({});
-  const [activePage, setActivePage] = useState("dashboard");
-  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [txModalOpen, setTxModalOpen] = useState(false);
-  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
-  const [editingTxId, setEditingTxId] = useState(null);
-  const [toast, setToast] = useState("");
-  const [txFilters, setTxFilters] = useState({ search: "", type: "", category: "" });
-  const [authForm, setAuthForm] = useState({
-    loginUsername: "",
-    loginPassword: "",
-    registerUsername: "",
-    registerPassword: ""
-  });
-  const [txForm, setTxForm] = useState({
-    type: "expense",
-    amount: "",
-    desc: "",
-    cat: "Food",
-    date: new Date().toISOString().slice(0, 10),
-    account: "cash"
-  });
-  const [budgetForm, setBudgetForm] = useState({
-    cat: "Food",
-    limit: ""
-  });
+  const heroRef = useRef(null);
+  const [heroProgress, setHeroProgress] = useState(0);
+  const [pageProgress, setPageProgress] = useState(0);
 
   useEffect(() => {
-    if (!user) {
-      localStorage.removeItem("kite_current_user");
-      setTransactions([]);
-      setBudgets({});
-      return;
-    }
+    let frameId = 0;
 
-    localStorage.setItem("kite_current_user", JSON.stringify(user));
-    loadAppData();
-  }, [user]);
+    const updateMotion = () => {
+      const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const nextPageProgress = documentHeight > 0 ? window.scrollY / documentHeight : 0;
+      setPageProgress(Math.min(Math.max(nextPageProgress, 0), 1));
 
-  useEffect(() => {
-    if (!toast) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setToast(""), 2500);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
-
-  async function loadAppData() {
-    if (!user?._id) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const [txRes, budgetRes] = await Promise.all([
-        api("/transactions", {}, user._id),
-        api("/budgets", {}, user._id)
-      ]);
-      setTransactions(txRes.transactions);
-      setBudgets(budgetRes.budgets);
-    } catch (error) {
-      setToast(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleRegister(event) {
-    event.preventDefault();
-    setAuthError("");
-
-    try {
-      const payload = await api("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({
-          username: authForm.registerUsername.trim(),
-          password: authForm.registerPassword
-        })
-      });
-      setUser(payload.user);
-      setAuthForm((current) => ({
-        ...current,
-        registerUsername: "",
-        registerPassword: "",
-        loginPassword: ""
-      }));
-      setToast("Account created successfully.");
-    } catch (error) {
-      setAuthError(error.message);
-    }
-  }
-
-  async function handleLogin(event) {
-    event.preventDefault();
-    setAuthError("");
-
-    try {
-      const payload = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          username: authForm.loginUsername.trim(),
-          password: authForm.loginPassword
-        })
-      });
-      setUser(payload.user);
-      setAuthForm((current) => ({
-        ...current,
-        loginPassword: ""
-      }));
-      setToast("Welcome back.");
-    } catch (error) {
-      setAuthError(error.message);
-    }
-  }
-
-  function handleLogout() {
-    setUser(null);
-    setAuthMode("login");
-    setActivePage("dashboard");
-    setToast("Logged out.");
-  }
-
-  const currentCategories = txForm.type === "income" ? incomeCategories : expenseCategories;
-
-  useEffect(() => {
-    if (!currentCategories.includes(txForm.cat)) {
-      setTxForm((current) => ({
-        ...current,
-        cat: currentCategories[0]
-      }));
-    }
-  }, [txForm.type]);
-
-  const totals = useMemo(() => {
-    const now = new Date();
-    const thisMonth = transactions.filter((transaction) => {
-      const date = new Date(transaction.date);
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-    });
-    const income = thisMonth
-      .filter((transaction) => transaction.type === "income")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-    const expense = thisMonth
-      .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-    const balance =
-      transactions
-        .filter((transaction) => transaction.type === "income")
-        .reduce((sum, transaction) => sum + transaction.amount, 0) -
-      transactions
-        .filter((transaction) => transaction.type === "expense")
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-    return {
-      income,
-      expense,
-      savings: income - expense,
-      balance,
-      thisMonth
-    };
-  }, [transactions]);
-
-  const recentTransactions = useMemo(
-    () =>
-      [...transactions]
-        .sort((left, right) => new Date(right.date) - new Date(left.date))
-        .slice(0, 5),
-    [transactions]
-  );
-
-  const monthlyTransactions = useMemo(() => {
-    return [...transactions]
-      .filter((transaction) => {
-        const date = new Date(transaction.date);
-        return date.getMonth() === viewMonth && date.getFullYear() === viewYear;
-      })
-      .sort((left, right) => new Date(right.date) - new Date(left.date));
-  }, [transactions, viewMonth, viewYear]);
-
-  const monthlyStats = useMemo(() => {
-    const income = monthlyTransactions
-      .filter((transaction) => transaction.type === "income")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-    const expense = monthlyTransactions
-      .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-    return {
-      income,
-      expense,
-      saved: income - expense
-    };
-  }, [monthlyTransactions]);
-
-  const filteredTransactions = useMemo(() => {
-    const search = txFilters.search.toLowerCase().trim();
-    return [...transactions]
-      .sort((left, right) => new Date(right.date) - new Date(left.date))
-      .filter((transaction) => {
-        const matchesSearch =
-          !search ||
-          transaction.desc.toLowerCase().includes(search) ||
-          transaction.cat.toLowerCase().includes(search);
-        const matchesType = !txFilters.type || transaction.type === txFilters.type;
-        const matchesCategory = !txFilters.category || transaction.cat === txFilters.category;
-        return matchesSearch && matchesType && matchesCategory;
-      });
-  }, [transactions, txFilters]);
-
-  const chartData = useMemo(() => {
-    const now = new Date();
-    const months = [];
-
-    for (let index = 5; index >= 0; index -= 1) {
-      const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
-      const monthTransactions = transactions.filter((transaction) => {
-        const itemDate = new Date(transaction.date);
-        return itemDate.getMonth() === date.getMonth() && itemDate.getFullYear() === date.getFullYear();
-      });
-
-      months.push({
-        label: date.toLocaleString("default", { month: "short" }),
-        income: monthTransactions
-          .filter((transaction) => transaction.type === "income")
-          .reduce((sum, transaction) => sum + transaction.amount, 0),
-        expense: monthTransactions
-          .filter((transaction) => transaction.type === "expense")
-          .reduce((sum, transaction) => sum + transaction.amount, 0)
-      });
-    }
-
-    return months;
-  }, [transactions]);
-
-  const chartMax = Math.max(
-    ...chartData.flatMap((item) => [item.income, item.expense]),
-    1
-  );
-
-  const donutEntries = useMemo(() => {
-    const expenseMap = {};
-    totals.thisMonth
-      .filter((transaction) => transaction.type === "expense")
-      .forEach((transaction) => {
-        expenseMap[transaction.cat] = (expenseMap[transaction.cat] || 0) + transaction.amount;
-      });
-
-    return Object.entries(expenseMap).sort((left, right) => right[1] - left[1]);
-  }, [totals.thisMonth]);
-
-  const budgetCards = useMemo(() => {
-    const now = new Date();
-    const monthlyExpenseMap = {};
-
-    transactions
-      .filter((transaction) => {
-        const date = new Date(transaction.date);
-        return (
-          transaction.type === "expense" &&
-          date.getMonth() === now.getMonth() &&
-          date.getFullYear() === now.getFullYear()
-        );
-      })
-      .forEach((transaction) => {
-        monthlyExpenseMap[transaction.cat] = (monthlyExpenseMap[transaction.cat] || 0) + transaction.amount;
-      });
-
-    return Object.entries(budgets).map(([category, limit]) => {
-      const spent = monthlyExpenseMap[category] || 0;
-      const pct = Math.min((spent / limit) * 100 || 0, 100);
-      const status =
-        pct >= 100 ? ["over", "Over Budget"] : pct >= 80 ? ["warn", "Near Limit"] : ["ok", "On Track"];
-      const color = pct >= 100 ? "var(--accent2)" : pct >= 80 ? "var(--accent4)" : "var(--accent)";
-      return { category, limit, spent, pct, status, color };
-    });
-  }, [budgets, transactions]);
-
-  function openTxModal(transaction = null) {
-    if (transaction) {
-      setEditingTxId(transaction._id);
-      setTxForm({
-        type: transaction.type,
-        amount: transaction.amount,
-        desc: transaction.desc,
-        cat: transaction.cat,
-        date: transaction.date.slice(0, 10),
-        account: transaction.account
-      });
-    } else {
-      setEditingTxId(null);
-      setTxForm({
-        type: "expense",
-        amount: "",
-        desc: "",
-        cat: "Food",
-        date: new Date().toISOString().slice(0, 10),
-        account: "cash"
-      });
-    }
-    setTxModalOpen(true);
-  }
-
-  function closeTxModal() {
-    setTxModalOpen(false);
-    setEditingTxId(null);
-  }
-
-  function openBudgetModal(category = null) {
-    setBudgetModalOpen(true);
-    if (category) {
-      setBudgetForm({
-        cat: category,
-        limit: budgets[category]
-      });
-    } else {
-      setBudgetForm({
-        cat: expenseCategories[0],
-        limit: ""
-      });
-    }
-  }
-
-  function closeBudgetModal() {
-    setBudgetModalOpen(false);
-  }
-
-  async function saveTransaction() {
-    if (!txForm.amount || Number(txForm.amount) <= 0) {
-      setToast("Please enter a valid amount.");
-      return;
-    }
-
-    if (!txForm.desc.trim() || !txForm.date) {
-      setToast("Please fill all transaction details.");
-      return;
-    }
-
-    const payload = {
-      amount: Number(txForm.amount),
-      desc: txForm.desc.trim(),
-      cat: txForm.cat,
-      date: txForm.date,
-      account: txForm.account,
-      type: txForm.type
-    };
-
-    try {
-      if (editingTxId) {
-        const response = await api(`/transactions/${editingTxId}`, {
-          method: "PUT",
-          body: JSON.stringify(payload)
-        }, user._id);
-        setTransactions((current) =>
-          current.map((transaction) =>
-            transaction._id === editingTxId ? response.transaction : transaction
-          )
-        );
-        setToast("Transaction updated.");
-      } else {
-        const response = await api("/transactions", {
-          method: "POST",
-          body: JSON.stringify(payload)
-        }, user._id);
-        setTransactions((current) => [response.transaction, ...current]);
-        setToast("Transaction added.");
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect();
+        const scrollDistance = Math.max(heroRef.current.offsetHeight - window.innerHeight, 1);
+        const nextHeroProgress = Math.min(Math.max(-rect.top / scrollDistance, 0), 1);
+        setHeroProgress(nextHeroProgress);
       }
-      closeTxModal();
-    } catch (error) {
-      setToast(error.message);
-    }
-  }
 
-  async function deleteTransaction(transactionId) {
-    try {
-      await api(`/transactions/${transactionId}`, { method: "DELETE" }, user._id);
-      setTransactions((current) => current.filter((transaction) => transaction._id !== transactionId));
-      setToast("Transaction deleted.");
-    } catch (error) {
-      setToast(error.message);
-    }
-  }
+      document.querySelectorAll("[data-scroll-scene]").forEach((scene) => {
+        const rect = scene.getBoundingClientRect();
+        const viewport = window.innerHeight;
+        const progress = Math.min(Math.max((viewport - rect.top) / (viewport + rect.height), 0), 1);
+        scene.style.setProperty("--scene-progress", progress.toFixed(3));
+      });
 
-  async function saveBudget() {
-    if (!budgetForm.limit || Number(budgetForm.limit) <= 0) {
-      setToast("Enter a valid budget limit.");
-      return;
-    }
+      frameId = 0;
+    };
 
-    try {
-      const response = await api(
-        `/budgets/${encodeURIComponent(budgetForm.cat)}`,
-        {
-          method: "PUT",
-          body: JSON.stringify({ limit: Number(budgetForm.limit) })
-        },
-        user._id
-      );
-      setBudgets(response.budgets);
-      setBudgetModalOpen(false);
-      setToast(`Budget saved for ${budgetForm.cat}.`);
-    } catch (error) {
-      setToast(error.message);
-    }
-  }
+    const requestMotionUpdate = () => {
+      if (!frameId) {
+        frameId = window.requestAnimationFrame(updateMotion);
+      }
+    };
 
-  async function deleteBudget(category) {
-    try {
-      const response = await api(`/budgets/${encodeURIComponent(category)}`, { method: "DELETE" }, user._id);
-      setBudgets(response.budgets);
-      setToast("Budget removed.");
-    } catch (error) {
-      setToast(error.message);
-    }
-  }
+    requestMotionUpdate();
+    window.addEventListener("scroll", requestMotionUpdate, { passive: true });
+    window.addEventListener("resize", requestMotionUpdate);
 
-  function exportCsv() {
-    if (!transactions.length) {
-      setToast("No transactions to export.");
-      return;
-    }
-
-    const header = "Date,Type,Category,Description,Amount,Account\n";
-    const rows = transactions
-      .map(
-        (transaction) =>
-          `${transaction.date.slice(0, 10)},${transaction.type},${transaction.cat},"${transaction.desc.replaceAll("\"", "\"\"")}",${transaction.amount},${transaction.account}`
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `kite-${user.username}-transactions.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-    setToast("CSV exported.");
-  }
-
-  function renderDonutPaths() {
-    if (!donutEntries.length) {
-      return [
-        <circle key="empty" cx="80" cy="80" r="55" fill="none" stroke="var(--border)" strokeWidth="20" />
-      ];
-    }
-
-    const total = donutEntries.reduce((sum, [, amount]) => sum + amount, 0);
-    let offset = -90;
-    const parts = donutEntries.map(([category, amount], index) => {
-      const pct = amount / total;
-      const angle = pct * 360;
-      const toRadians = (value) => (value * Math.PI) / 180;
-      const x1 = 80 + 55 * Math.cos(toRadians(offset));
-      const y1 = 80 + 55 * Math.sin(toRadians(offset));
-      offset += angle;
-      const x2 = 80 + 55 * Math.cos(toRadians(offset));
-      const y2 = 80 + 55 * Math.sin(toRadians(offset));
-      const largeArc = angle > 180 ? 1 : 0;
-
-      return (
-        <path
-          key={category}
-          d={`M80,80 L${x1},${y1} A55,55,0,${largeArc},1,${x2},${y2}Z`}
-          fill={catColors[index % catColors.length]}
-          opacity="0.85"
-        />
-      );
-    });
-
-    parts.push(<circle key="inner-circle" cx="80" cy="80" r="32" fill="var(--surface)" />);
-    parts.push(
-      <text
-        key="inner-text"
-        x="80"
-        y="84"
-        textAnchor="middle"
-        fill="var(--text)"
-        fontSize="11"
-        fontFamily="Syne"
-      >
-        {`${donutEntries.length} cats`}
-      </text>
-    );
-
-    return parts;
-  }
-
-  function changeMonth(step) {
-    const next = new Date(viewYear, viewMonth + step, 1);
-    setViewMonth(next.getMonth());
-    setViewYear(next.getFullYear());
-  }
-
-  function updateAuthForm(field, value) {
-    setAuthForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function updateTxForm(field, value) {
-    setTxForm((current) => ({ ...current, [field]: value }));
-  }
-
-  const uniqueCategories = [...new Set(transactions.map((transaction) => transaction.cat))];
-
-  if (!user) {
-    return (
-      <div className="login-screen">
-        <div className="login-box">
-          <div className="login-logo">
-            <div className="logo-icon">🪁</div>
-            <span className="logo-text">
-              Ki<span>te</span>
-            </span>
-          </div>
-
-          {authMode === "login" ? (
-            <div>
-              <div className="login-title">Welcome Back</div>
-              <form onSubmit={handleLogin}>
-                {authError ? <div className="error-msg show">{authError}</div> : null}
-                <div className="form-group">
-                  <label className="form-label">Username</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={authForm.loginUsername}
-                    onChange={(event) => updateAuthForm("loginUsername", event.target.value)}
-                    placeholder="Enter your username"
-                    required
-                  />
-                </div>
-                <div className="form-group auth-bottom-gap">
-                  <label className="form-label">Password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    value={authForm.loginPassword}
-                    onChange={(event) => updateAuthForm("loginPassword", event.target.value)}
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary btn-block">
-                  Log In
-                </button>
-              </form>
-              <div className="auth-switch">
-                Do not have an account?{" "}
-                <span onClick={() => setAuthMode("register")}>Sign up</span>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="login-title">Create Account</div>
-              <form onSubmit={handleRegister}>
-                {authError ? <div className="error-msg show">{authError}</div> : null}
-                <div className="form-group">
-                  <label className="form-label">Choose a Username</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={authForm.registerUsername}
-                    onChange={(event) => updateAuthForm("registerUsername", event.target.value)}
-                    placeholder="e.g. Arjun"
-                    required
-                  />
-                </div>
-                <div className="form-group auth-bottom-gap">
-                  <label className="form-label">Create a Password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    value={authForm.registerPassword}
-                    onChange={(event) => updateAuthForm("registerPassword", event.target.value)}
-                    placeholder="Min 4 characters"
-                    minLength={4}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary btn-block">
-                  Create Account
-                </button>
-              </form>
-              <div className="auth-switch">
-                Already have an account?{" "}
-                <span onClick={() => setAuthMode("login")}>Log in</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+    return () => {
+      window.removeEventListener("scroll", requestMotionUpdate);
+      window.removeEventListener("resize", requestMotionUpdate);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   return (
-    <div id="app-container">
-      <aside className="sidebar">
-        <div className="logo">
-          <div className="logo-icon">🪁</div>
-          <div className="logo-text">
-            Ki<span>te</span>
+    <main
+      id="top"
+      className="portfolio"
+      style={{
+        "--hero-progress": heroProgress,
+        "--page-progress": pageProgress
+      }}
+    >
+      <section className="hero-scroll" ref={heroRef}>
+        <div className="hero-stage">
+          <a className="availability-banner" href="mailto:meetsharma0702@gmail.com">
+            <span className="availability-dot" />
+            Available for internships and collaborations
+            <span className="availability-action">Get in touch <ArrowIcon /></span>
+          </a>
+          <Header />
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <p className="kicker">Hey, I&apos;m</p>
+              <h1>
+                <span className="hero-name">
+                  Meet
+                  <span className="inline-portrait">
+                    <img src="/assets/meet-sharma.jpg" alt="Meet Sharma" />
+                  </span>
+                  Sharma
+                </span>
+                <span>A Full Stack <strong>Developer</strong></span>
+                <em>Building digital products that work.</em>
+              </h1>
+              <p className="hero-description">
+                Computer Science undergraduate at Chandigarh University, focused on practical
+                web applications, thoughtful interfaces, and full-stack problem solving.
+              </p>
+              <div className="hero-actions hero-actions-main">
+                <a className="button button-primary" href="#projects">
+                  View selected work <ArrowIcon />
+                </a>
+                <a className="button button-quiet" href="/Meet-Sharma-Resume.pdf" download>
+                  Download resume <DownloadIcon />
+                </a>
+              </div>
+              <div className="hero-socials" aria-label="Social links">
+                {socialLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <a key={link.name} href={link.href} target="_blank" rel="noreferrer" aria-label={link.name}>
+                      <span className={`brand-icon ${link.tone}`}><Icon /></span>
+                    </a>
+                  );
+                })}
+                <span className="hero-social-divider" />
+                <a className="hero-talk-link" href="mailto:meetsharma0702@gmail.com">Let&apos;s talk <ArrowIcon /></a>
+              </div>
+            </div>
+
+            <div className="hero-machine" aria-label="Scroll-reactive developer profile visual">
+              <div className="machine-caption caption-top">React / Node / MongoDB</div>
+              <div className="machine-caption caption-bottom">Damoh, Madhya Pradesh, India</div>
+              <div className="machine-orbit orbit-one" />
+              <div className="machine-orbit orbit-two" />
+              <div className="machine-orbit orbit-three" />
+              <div className="machine-ticks" />
+              <div className="machine-core">
+                <span className="core-mark">MS</span>
+                <span className="core-label">BUILD / LEARN / SHIP</span>
+              </div>
+              <div className="portrait-card">
+                <img src="/assets/meet-sharma.jpg" alt="Meet Sharma" />
+              </div>
+              <div className="machine-node node-react"><ReactIcon /></div>
+              <div className="machine-node node-js"><JavaScriptIcon /></div>
+              <div className="machine-node node-db"><MongoIcon /></div>
+            </div>
+          </div>
+
+          <div className="hero-foot">
+            <span>Scroll to explore</span>
+            <div className="scroll-line"><i /></div>
+            <span>{Math.round(heroProgress * 100).toString().padStart(2, "0")} / 100</span>
           </div>
         </div>
+      </section>
 
-        <nav>
-          {[
-            ["dashboard", "Dashboard", "🏠"],
-            ["monthly", "Monthly", "📅"],
-            ["transactions", "Transactions", "💳"],
-            ["budget", "Budget", "📋"]
-          ].map(([key, label, icon]) => (
-            <button
-              key={key}
-              className={`nav-item ${activePage === key ? "active" : ""}`}
-              onClick={() => setActivePage(key)}
-            >
-              <span className="nav-icon">{icon}</span>
-              {label}
-            </button>
+      <section className="skill-marquee" aria-label="Technical skills">
+        <div className="marquee-track">
+          {[...movingSkills, ...movingSkills].map((skill, index) => (
+            <span key={`${skill}-${index}`}>{skill}<i>+</i></span>
           ))}
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="user-pill">
-            <div className="avatar">{user.username.slice(0, 2).toUpperCase()}</div>
-            <div className="user-info">
-              <div className="user-name">{user.username}</div>
-              <div className="user-tag">Local Mongo User</div>
-            </div>
-          </div>
-          <button className="btn btn-ghost btn-block" onClick={handleLogout}>
-            Log Out
-          </button>
         </div>
-      </aside>
+      </section>
 
-      <main className="main">
-        {loading ? <div className="loading-banner">Syncing data from MongoDB...</div> : null}
-
-        {activePage === "dashboard" ? (
-          <div className="page active">
-            <div className="topbar">
-              <div>
-                <div className="page-title">Dashboard</div>
-                <div className="page-sub">Your money flow at a glance</div>
-              </div>
-              <button className="btn btn-primary" onClick={() => openTxModal()}>
-                + Add Transaction
-              </button>
-            </div>
-
-            <div className="stats-grid">
-              <div className="stat-card blue">
-                <div className="stat-label">Current Balance</div>
-                <div className="stat-value">{fmt(totals.balance)}</div>
-              </div>
-              <div className="stat-card green">
-                <div className="stat-label">This Month Income</div>
-                <div className="stat-value">{fmt(totals.income)}</div>
-              </div>
-              <div className="stat-card red">
-                <div className="stat-label">This Month Expense</div>
-                <div className="stat-value">{fmt(totals.expense)}</div>
-              </div>
-              <div className="stat-card orange">
-                <div className="stat-label">This Month Savings</div>
-                <div className="stat-value savings-value">{fmt(totals.savings)}</div>
-              </div>
-            </div>
-
-            <div className="section-grid">
-              <div className="card">
-                <div className="card-title">Income vs Expense</div>
-                <div className="bar-chart">
-                  {chartData.map((item) => (
-                    <div className="bar-group" key={item.label}>
-                      <div className="bar-wrap">
-                        <div
-                          className="bar bar-income"
-                          style={{ height: `${(item.income / chartMax) * 100}%` }}
-                          title={`Income: ${fmt(item.income)}`}
-                        />
-                        <div
-                          className="bar bar-expense"
-                          style={{ height: `${(item.expense / chartMax) * 100}%` }}
-                          title={`Expense: ${fmt(item.expense)}`}
-                        />
-                      </div>
-                      <div className="bar-label">{item.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="card-title">Expense Split</div>
-                <div className="donut-wrap">
-                  <svg className="donut-svg" viewBox="0 0 160 160">
-                    {renderDonutPaths()}
-                  </svg>
-                  <div className="donut-legend">
-                    {donutEntries.length ? (
-                      donutEntries.slice(0, 5).map(([category, amount], index) => {
-                        const total = donutEntries.reduce((sum, [, value]) => sum + value, 0) || 1;
-                        return (
-                          <div className="legend-item" key={category}>
-                            <div
-                              className="legend-dot"
-                              style={{ background: catColors[index % catColors.length] }}
-                            />
-                            <span className="legend-label">
-                              {catEmoji[category] || "💰"} {category}
-                            </span>
-                            <span className="legend-pct">{((amount / total) * 100).toFixed(0)}%</span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="empty-text muted-center">No expenses this month</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-title">Recent Transactions</div>
-              <div className="tx-list">
-                {recentTransactions.length ? (
-                  recentTransactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction._id}
-                      transaction={transaction}
-                      onEdit={() => openTxModal(transaction)}
-                      onDelete={() => deleteTransaction(transaction._id)}
-                    />
-                  ))
-                ) : (
-                  <EmptyState icon="🧾" text="No transactions yet. Add one!" />
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {activePage === "monthly" ? (
-          <div className="page active">
-            <div className="topbar">
-              <div>
-                <div className="page-title">Monthly View</div>
-                <div className="page-sub">Track your income and expenses month by month</div>
-              </div>
-              <div className="month-nav">
-                <button onClick={() => changeMonth(-1)}>‹</button>
-                <div className="month-display">{`${monthNames[viewMonth]} ${viewYear}`}</div>
-                <button onClick={() => changeMonth(1)}>›</button>
-              </div>
-            </div>
-
-            <div className="monthly-stats">
-              <div className="stat-card blue">
-                <div className="stat-label">Income</div>
-                <div className="stat-value">{fmt(monthlyStats.income)}</div>
-              </div>
-              <div className="stat-card red">
-                <div className="stat-label">Expense</div>
-                <div className="stat-value">{fmt(monthlyStats.expense)}</div>
-              </div>
-              <div className="stat-card green">
-                <div className="stat-label">Saved</div>
-                <div className="stat-value">{fmt(monthlyStats.saved)}</div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-title">Transactions this Month</div>
-              <div className="full-tx-list">
-                {monthlyTransactions.length ? (
-                  monthlyTransactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction._id}
-                      transaction={transaction}
-                      onEdit={() => openTxModal(transaction)}
-                      onDelete={() => deleteTransaction(transaction._id)}
-                    />
-                  ))
-                ) : (
-                  <EmptyState icon="📭" text="No transactions for this month." />
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {activePage === "transactions" ? (
-          <div className="page active">
-            <div className="topbar">
-              <div>
-                <div className="page-title">Transactions</div>
-                <div className="page-sub">All your income and expense entries</div>
-              </div>
-              <button className="btn btn-primary" onClick={() => openTxModal()}>
-                + Add Transaction
-              </button>
-            </div>
-
-            <div className="card filter-card">
-              <input
-                className="form-input inline-input"
-                type="text"
-                placeholder="Search..."
-                value={txFilters.search}
-                onChange={(event) => setTxFilters((current) => ({ ...current, search: event.target.value }))}
-              />
-              <select
-                className="form-select inline-input"
-                value={txFilters.type}
-                onChange={(event) => setTxFilters((current) => ({ ...current, type: event.target.value }))}
-              >
-                <option value="">All Types</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
-              <select
-                className="form-select inline-input"
-                value={txFilters.category}
-                onChange={(event) => setTxFilters((current) => ({ ...current, category: event.target.value }))}
-              >
-                <option value="">All Categories</option>
-                {uniqueCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-ghost export-btn" onClick={exportCsv}>
-                Export CSV
-              </button>
-            </div>
-
-            <div className="card">
-              <div className="full-tx-list">
-                {filteredTransactions.length ? (
-                  filteredTransactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction._id}
-                      transaction={transaction}
-                      onEdit={() => openTxModal(transaction)}
-                      onDelete={() => deleteTransaction(transaction._id)}
-                    />
-                  ))
-                ) : (
-                  <EmptyState icon="🔍" text="No transactions match." />
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {activePage === "budget" ? (
-          <div className="page active">
-            <div className="topbar">
-              <div>
-                <div className="page-title">Budget</div>
-                <div className="page-sub">Set and track your category budgets</div>
-              </div>
-              <button className="btn btn-primary" onClick={() => openBudgetModal()}>
-                + Set Budget
-              </button>
-            </div>
-
-            <div className="budget-grid">
-              {budgetCards.length ? (
-                budgetCards.map((item) => (
-                  <div className="budget-card" key={item.category}>
-                    <div className="budget-card-top">
-                      <div className="budget-cat-name">
-                        <div className="budget-icon">{catEmoji[item.category] || "💰"}</div>
-                        {item.category}
-                      </div>
-                      <span className={`budget-status ${item.status[0]}`}>{item.status[1]}</span>
-                    </div>
-                    <div className="budget-amounts">
-                      Spent: <strong style={{ color: item.color }}>{fmt(item.spent)}</strong> / {fmt(item.limit)}
-                    </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${item.pct}%`, background: item.color }}
-                      />
-                    </div>
-                    <div className="budget-actions">
-                      <button className="btn btn-ghost small-btn" onClick={() => openBudgetModal(item.category)}>
-                        Edit
-                      </button>
-                      <button className="btn btn-danger small-btn" onClick={() => deleteBudget(item.category)}>
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="empty budget-empty">
-                  <div className="empty-icon">📋</div>
-                  <div className="empty-text">No budgets set yet.</div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-      </main>
-
-      <div className={`modal-overlay ${txModalOpen ? "open" : ""}`}>
-        <div className="modal">
-          <div className="modal-title">{editingTxId ? "Edit Transaction" : "Add Transaction"}</div>
-          <div className="form-group">
-            <label className="form-label">Type</label>
-            <div className="type-toggle">
-              <button
-                className={`type-btn ${txForm.type === "income" ? "active-income" : ""}`}
-                onClick={() => updateTxForm("type", "income")}
-                type="button"
-              >
-                Income
-              </button>
-              <button
-                className={`type-btn ${txForm.type === "expense" ? "active-expense" : ""}`}
-                onClick={() => updateTxForm("type", "expense")}
-                type="button"
-              >
-                Expense
-              </button>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Amount (INR)</label>
-            <input
-              className="form-input"
-              type="number"
-              min="0"
-              value={txForm.amount}
-              onChange={(event) => updateTxForm("amount", event.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <input
-              className="form-input"
-              type="text"
-              value={txForm.desc}
-              onChange={(event) => updateTxForm("desc", event.target.value)}
-              placeholder="e.g. Grocery shopping"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Category</label>
-            <select
-              className="form-select"
-              value={txForm.cat}
-              onChange={(event) => updateTxForm("cat", event.target.value)}
-            >
-              {currentCategories.map((category) => (
-                <option key={category} value={category}>
-                  {catEmoji[category]} {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={txForm.date}
-              onChange={(event) => updateTxForm("date", event.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Account</label>
-            <select
-              className="form-select"
-              value={txForm.account}
-              onChange={(event) => updateTxForm("account", event.target.value)}
-            >
-              <option value="cash">Cash</option>
-              <option value="bank">Bank</option>
-              <option value="credit">Credit Card</option>
-            </select>
-          </div>
-          <div className="modal-actions">
-            <button className="btn btn-ghost" onClick={closeTxModal} type="button">
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={saveTransaction} type="button">
-              Save
-            </button>
+      <section className="intro-section section-shell" id="about" data-scroll-scene>
+        <div className="section-index">01 / PROFILE</div>
+        <div className="intro-layout">
+          <h2>A developer who connects thoughtful interfaces with useful systems.</h2>
+          <div className="intro-copy">
+            <p>
+              I am a Computer Science and Engineering undergraduate with hands-on experience in
+              React.js, Node.js, Express.js, and MongoDB. I enjoy taking a problem from an idea
+              to a responsive, practical web application.
+            </p>
+            <a className="text-link" href="mailto:meetsharma0702@gmail.com">
+              Let&apos;s work together <ArrowIcon />
+            </a>
           </div>
         </div>
-      </div>
+        <div className="fact-grid">
+          <Fact value="2028" label="Expected graduation" />
+          <Fact value="10+" label="Number of project's" />
+          <Fact value="50+" label="DSA problems solved" />
+          <Fact value="SIH" label="Smart India Hackathon participant" />
+        </div>
+      </section>
 
-      <div className={`modal-overlay ${budgetModalOpen ? "open" : ""}`}>
-        <div className="modal">
-          <div className="modal-title">Set Budget</div>
-          <div className="form-group">
-            <label className="form-label">Category</label>
-            <select
-              className="form-select"
-              value={budgetForm.cat}
-              onChange={(event) => setBudgetForm((current) => ({ ...current, cat: event.target.value }))}
-            >
-              {expenseCategories.map((category) => (
-                <option key={category} value={category}>
-                  {catEmoji[category]} {category}
-                </option>
-              ))}
-            </select>
+      <section className="experience-section section-shell" id="experience" data-scroll-scene>
+        <div className="section-heading-row">
+          <div>
+            <div className="section-index">02 / EXPERIENCE</div>
+            <h2>Working across the stack.</h2>
           </div>
-          <div className="form-group">
-            <label className="form-label">Monthly Limit (INR)</label>
-            <input
-              className="form-input"
-              type="number"
-              min="0"
-              value={budgetForm.limit}
-              onChange={(event) => setBudgetForm((current) => ({ ...current, limit: event.target.value }))}
-              placeholder="e.g. 5000"
-            />
+          <p>Building production-minded features with a practical, collaborative approach.</p>
+        </div>
+        <article className="experience-card">
+          <div className="experience-date">JUN 2026 - JUL 2026</div>
+          <div className="experience-role">
+            <p>BinaryLogix, Bhopal</p>
+            <h3>Full Stack Web Development Intern</h3>
           </div>
-          <div className="modal-actions">
-            <button className="btn btn-ghost" onClick={closeBudgetModal} type="button">
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={saveBudget} type="button">
-              Save Budget
-            </button>
+          <ul>
+            <li>Developed 3+ responsive web applications with React.js and Node.js.</li>
+            <li>Built REST APIs with Express.js and integrated MongoDB for CRUD operations.</li>
+            <li>Collaborated through Git and GitHub while debugging and improving performance.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section className="projects-section section-shell" id="projects" data-scroll-scene>
+        <div className="section-heading-row">
+          <div>
+            <div className="section-index">03 / SELECTED WORK</div>
+            <h2>Projects made to solve real problems.</h2>
+          </div>
+          <p>Two focused builds across web development, analytics, and physical safety.</p>
+        </div>
+        <div className="project-list">
+          {projects.map((project) => (
+            <article className={`project-card ${project.accent}`} key={project.name}>
+              <div className="project-number">{project.number}</div>
+              <div className="project-content">
+                <p className="project-type">{project.type} <span>{project.date}</span></p>
+                <h3>{project.name}</h3>
+                <p className="project-description">{project.description}</p>
+                <div className="project-stack">
+                  {project.stack.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              </div>
+              <div className="project-art" aria-hidden="true">
+                <span className="project-orbit" />
+                <span className="project-pulse" />
+                <span className="project-grid" />
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="skills-section section-shell" id="skills" data-scroll-scene>
+        <div className="section-heading-row">
+          <div>
+            <div className="section-index">04 / TOOLKIT</div>
+            <h2>The tools behind the work.</h2>
+          </div>
+          <p>From frontend detail to backend logic, with each icon in its recognizable brand color.</p>
+        </div>
+        <div className="skills-grid">
+          {skillGroups.map((group) => (
+            <article className="skill-group" key={group.label}>
+              <h3>{group.label}</h3>
+              <div className="skill-list">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div className="skill-item" key={item.name}>
+                      <span className={`brand-icon ${item.tone}`}><Icon /></span>
+                      <span>{item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="credentials-section section-shell" data-scroll-scene>
+        <div className="section-index">05 / EDUCATION & LEARNING</div>
+        <div className="credentials-layout">
+          <article className="education-card">
+            <p className="card-overline">Chandigarh University, Mohali</p>
+            <h2>B.E. Computer Science & Engineering</h2>
+            <div><span>Expected 2028</span></div>
+          </article>
+          <div className="certifications">
+            <p className="card-overline">Certifications</p>
+            <span>Generative AI / Infosys</span>
+            <span>Python Data Analytics / Meta</span>
+            <span>Front-End Development / University of California</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className={`toast ${toast ? "show" : ""}`}>
-        <span>{toast}</span>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ icon, text }) {
-  return (
-    <div className="empty">
-      <div className="empty-icon">{icon}</div>
-      <div className="empty-text">{text}</div>
-    </div>
-  );
-}
-
-function TransactionRow({ transaction, onEdit, onDelete }) {
-  const color = transaction.type === "income" ? "rgba(200,240,101,0.12)" : "rgba(240,101,101,0.12)";
-
-  return (
-    <div className="tx-item">
-      <div className="tx-icon" style={{ background: color }}>
-        {catEmoji[transaction.cat] || "💰"}
-      </div>
-      <div className="tx-info">
-        <div className="tx-name">{transaction.desc}</div>
-        <div className="tx-date">
-          {transaction.cat} ·{" "}
-          {new Date(transaction.date).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric"
+      <footer className="contact-section" id="contact" data-scroll-scene>
+        <div className="footer-orbit" />
+        <p className="section-index">06 / GET IN TOUCH</p>
+        <h2>Let&apos;s build something that matters.</h2>
+        <a className="email-link" href="mailto:meetsharma0702@gmail.com">meetsharma0702@gmail.com <ArrowIcon /></a>
+        <div className="social-links">
+          {socialLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <a key={link.name} href={link.href} target="_blank" rel="noreferrer" className="social-link">
+                <span className={`brand-icon ${link.tone}`}><Icon /></span>
+                <span>{link.name}</span>
+                <span className="social-handle">{link.handle}</span>
+                <ExternalIcon />
+              </a>
+            );
           })}
         </div>
-      </div>
-      <div className={`tx-amount ${transaction.type === "income" ? "credit" : "debit"}`}>
-        {transaction.type === "income" ? "+" : "-"}
-        {fmt(transaction.amount)}
-      </div>
-      <div className="tx-actions">
-        <button className="icon-btn" onClick={onEdit} type="button">
-          ✏️
-        </button>
-        <button className="icon-btn" onClick={onDelete} type="button">
-          🗑️
-        </button>
-      </div>
-    </div>
+        <p className="footer-signoff">Meet Sharma / 2026</p>
+      </footer>
+    </main>
   );
+}
+
+function Header() {
+  return (
+    <header className="site-header">
+      <a className="wordmark" href="#top" aria-label="Meet Sharma home">MS<span>.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#projects">Work</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a className="header-email" href="mailto:meetsharma0702@gmail.com">Available for internships <span>+</span></a>
+    </header>
+  );
+}
+
+function Fact({ value, label }) {
+  return <div className="fact"><strong>{value}</strong><span>{label}</span></div>;
+}
+
+function Svg({ children, viewBox = "0 0 24 24" }) {
+  return <svg viewBox={viewBox} aria-hidden="true" focusable="false">{children}</svg>;
+}
+
+function ArrowIcon() {
+  return <Svg><path fill="currentColor" d="M13.3 4.3 12 5.7l4 4H4v1.85h12l-4 4 1.3 1.3 6.2-6.22Z" /></Svg>;
+}
+
+function DownloadIcon() {
+  return <Svg><path fill="currentColor" d="M11.1 3h1.8v10.12l3.23-3.22 1.27 1.27-5.4 5.4-5.4-5.4 1.27-1.27 3.23 3.22ZM5 19h14v2H5Z" /></Svg>;
+}
+
+function ExternalIcon() {
+  return <Svg><path fill="currentColor" d="M13 3h8v8h-1.8V6.08l-8.56 8.56-1.28-1.28 8.56-8.56H13ZM5 5h6v1.8H6.8v10.4h10.4V13H19v6H5Z" /></Svg>;
+}
+
+function GithubIcon() {
+  return <Svg><path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.74-1.33-1.74-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.08 1.84 2.82 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.96 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.3 1.23a11.38 11.38 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.89.12 3.19.76.84 1.23 1.91 1.23 3.22 0 4.63-2.8 5.65-5.48 5.95.43.37.82 1.09.82 2.21v3.27c0 .32.22.69.83.58A12 12 0 0 0 12 .5Z" /></Svg>;
+}
+
+function LinkedinIcon() {
+  return <Svg><path fill="currentColor" d="M4.98 3.5A2.48 2.48 0 1 0 5 8.46 2.48 2.48 0 0 0 4.98 3.5ZM3 9h4v12H3Zm7 0h3.83v1.64h.06c.53-.95 1.84-1.95 3.79-1.95C21.6 8.69 23 10.28 23 13.2V21h-4v-6.92c0-1.65-.03-3.77-2.3-3.77-2.3 0-2.65 1.8-2.65 3.65V21h-4Z" /></Svg>;
+}
+
+function InstagramIcon() {
+  return <Svg><path fill="currentColor" d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95Zm8.96 1.35a1.09 1.09 0 1 1 0 2.18 1.09 1.09 0 0 1 0-2.18ZM12 6.86A5.14 5.14 0 1 1 6.86 12 5.15 5.15 0 0 1 12 6.86Zm0 1.8A3.34 3.34 0 1 0 15.34 12 3.35 3.35 0 0 0 12 8.66Z" /></Svg>;
+}
+
+function LeetcodeIcon() {
+  return <Svg viewBox="0 0 32 32"><path fill="currentColor" d="M20.72 4.24a2 2 0 0 1 2.83 0l4.2 4.2a2 2 0 0 1 0 2.83l-9.1 9.1a2 2 0 0 1-2.82-2.84l7.69-7.68-2.79-2.78-10.5 10.5 2.79 2.78 4.04-4.04a2 2 0 1 1 2.83 2.83l-5.46 5.45a2 2 0 0 1-2.83 0l-4.2-4.2a2 2 0 0 1 0-2.83Z" /><path fill="currentColor" d="M12.68 27.76a2 2 0 0 1 0-4h13.08a2 2 0 1 1 0 4Z" /></Svg>;
+}
+
+function ReactIcon() {
+  return <Svg><circle cx="12" cy="12" r="1.8" fill="currentColor" /><ellipse cx="12" cy="12" rx="8" ry="3.3" fill="none" stroke="currentColor" strokeWidth="1.5" /><ellipse cx="12" cy="12" rx="8" ry="3.3" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(60 12 12)" /><ellipse cx="12" cy="12" rx="8" ry="3.3" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(120 12 12)" /></Svg>;
+}
+
+function JavaScriptIcon() {
+  return <Svg><path fill="currentColor" d="M3 3h18v18H3Z" /><path fill="#1c1c1c" d="M14.05 16.93c.39.63.9 1.1 1.82 1.1.76 0 1.25-.38 1.25-.91 0-.63-.5-.85-1.34-1.22l-.46-.2c-1.34-.57-2.23-1.29-2.23-2.8 0-1.39 1.06-2.45 2.72-2.45 1.18 0 2.03.41 2.64 1.49l-1.45.93c-.32-.57-.66-.79-1.19-.79-.54 0-.89.34-.89.79 0 .55.34.77 1.12 1.1l.46.2c1.58.68 2.47 1.37 2.47 2.92 0 1.67-1.31 2.58-3.07 2.58-1.72 0-2.83-.82-3.37-1.89Zm-6.54.16c.29.52.55.96 1.18.96.6 0 .98-.23.98-1.13v-6.11h1.83v6.14c0 1.86-1.09 2.71-2.68 2.71-1.44 0-2.27-.74-2.69-1.63Z" /></Svg>;
+}
+
+function HtmlIcon() {
+  return <Svg><path fill="currentColor" d="M4 3h16l-1.45 16.23L12 21l-6.55-1.77Z" /><path fill="#ef652a" d="M12 19.24 17.29 17.8 18.53 4.33H12Z" /><path fill="#fff" d="m8.06 7.13.14 1.57H12v1.55H8.34l.17 1.88H12v1.55H10.2l.12 1.32 1.68.45v1.62l-3.17-.87-.46-5.12h5.17V7.13Zm3.94 0v1.57h4.42l-.15 1.55H12v1.88h4.1l-.37 4.05-3.73 1.03v-1.62l2.22-.6.13-1.32H12v-1.55h4.03l.4-4.49Z" /></Svg>;
+}
+
+function CssIcon() {
+  return <Svg><path fill="currentColor" d="M4 3h16l-1.45 16.23L12 21l-6.55-1.77Z" /><path fill="#2c7acb" d="M12 19.24 17.29 17.8 18.53 4.33H12Z" /><path fill="#fff" d="M12 7.13v1.57H7.64l.14 1.55H12v1.88H7.95l.42 4.67 3.63 1v-1.62l-2.14-.58-.13-1.45H12v-1.88H9.56l-.13-1.44H12V7.13Zm0 0v1.57h4.5l-.14 1.55H12v1.88h4.2l-.43 4.82-3.77 1.04v-1.62l2.27-.61.13-1.46H12v-1.88h4.08l.4-4.49Z" /></Svg>;
+}
+
+function JavaIcon() {
+  return <Svg><path fill="currentColor" d="M12.01 2c-1.2 2.47.32 3.26.32 4.9 0 1.49-1.24 2.23-1.24 3.65 0 1.13.6 1.88 1.05 2.38-1.89-1.02-3.14-2.53-3.14-4.25 0-2.02 1.47-3.76 3.01-6.68ZM15.5 5.05c.5 1.4-1.65 2.34-1.65 4.23 0 1.05.44 1.72.79 2.16-1.3-.75-2.16-1.85-2.16-3.14 0-1.42.91-2.43 3.02-3.25ZM6 15.2c1.38 1.25 10.62 1.25 12 0-.55 2.85-11.45 2.85-12 0Zm1.16 3.11c2.52.92 7.16.92 9.68 0-1.72 2.3-7.96 2.3-9.68 0Z" /></Svg>;
+}
+
+function CppIcon() {
+  return <Svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 2 29 9.5v13L16 30 3 22.5v-13Zm0 3.6L6.13 11.3v9.4L16 26.4l9.87-5.7v-9.4Z" /><path fill="currentColor" d="M11 14h4v-2h-4v2h-2v4h2v2h4v-2h-4v-4Zm9 0h-2v-2h-2v2h-2v2h2v2h2v-2h2v-2Zm4 0h-2v-2h-2v2h-2v2h2v2h2v-2h2Z" /></Svg>;
+}
+
+function PythonIcon() {
+  return <Svg><path fill="currentColor" d="M11.87 2.2c-4.1 0-3.84 1.78-3.84 1.78l.01 1.84h3.9v.55H6.49S3.88 6.08 3.88 10.23s2.28 4 2.28 4h1.36v-1.92s-.07-2.29 2.25-2.29h3.87s2.18.04 2.18-2.12V4.34s.33-2.14-3.95-2.14Zm-2.15 1.23a.72.72 0 1 1 0 1.44.72.72 0 0 1 0-1.44Z" /><path fill="#ffd845" d="M12.13 21.8c4.1 0 3.84-1.78 3.84-1.78l-.01-1.84h-3.9v-.55h5.45s2.61.29 2.61-3.86-2.28-4-2.28-4h-1.36v1.92s.07 2.29-2.25 2.29h-3.87s-2.18-.04-2.18 2.12v3.56s-.33 2.14 3.95 2.14Zm2.15-1.23a.72.72 0 1 1 0-1.44.72.72 0 0 1 0 1.44Z" /></Svg>;
+}
+
+function NodeIcon() {
+  return <Svg viewBox="0 0 32 32"><path fill="currentColor" d="m16 2 12.1 7v14L16 30 3.9 23V9Zm0 2.93-9.56 5.52v11.1L16 27.07l9.56-5.52v-11.1Z" /><path fill="currentColor" d="M16 8.2c-4.35 0-5.08 2.78-5.08 4.6 0 1.02.37 1.73 1.01 2.1.67.39 1.23.15 1.43-.4.24-.63.48-1.3.48-1.3.08-.2.01-.41-.17-.5-.18-.09-.4-.02-.5.16 0 0-.25.55-.44.96-.1.23-.22.27-.4.16-.17-.1-.3-.36-.3-.78 0-1.48.5-3.5 3.96-3.5 2.84 0 4.04 1.26 4.04 3.41 0 2.48-1.52 3.92-3.77 3.92-.74 0-1.4-.3-1.74-.66l-.3.96c.53.48 1.3.8 2.17.8 2.93 0 4.78-1.91 4.78-4.99 0-2.87-1.86-4.87-5.17-4.87Z" /></Svg>;
+}
+
+function ExpressIcon() {
+  return <Svg><path fill="currentColor" d="M3 7h7.8v2H5.56v2.6h4.52v1.96H5.56V16H11v2H3Zm9.3 0h2.72l2.1 3.4L19.19 7H22l-3.42 5.34L22.2 18h-2.8l-2.3-3.68L14.78 18H12l3.66-5.68Z" /></Svg>;
+}
+
+function MongoIcon() {
+  return <Svg><path fill="currentColor" d="M12.4 2.2c.24 3.28 2.86 4.53 3.56 7.36.74 2.98-.22 7.86-3.18 11.47l-.62.77-.1-4.04c.79-.37 1.1-1.25 1.1-1.25-.48.26-1.01.33-1.01.33l-.12-14.64Z" /><path fill="currentColor" d="M11.86 2.2C9.08 5.19 7.82 7.96 8.1 11.1c.25 2.81 1.7 5.6 3.74 8.13l.05-15.2Z" /></Svg>;
+}
+
+function MysqlIcon() {
+  return <Svg><path fill="currentColor" d="M3 15.4c1.52-3.47 4.04-5.2 7.56-5.2 1.61 0 2.72.53 3.32 1.6.64-2.87 2.35-4.3 5.12-4.3.87 0 1.86.2 2.96.6l-.54 1.53c-.78-.25-1.48-.38-2.1-.38-2.36 0-3.74 1.6-4.15 4.81.55.74.83 1.8.83 3.19 0 1.45-.47 2.8-1.4 4.05l-1.31-.98c.67-.9 1-1.86 1-2.9 0-1.11-.27-1.89-.82-2.34-.42-.38-1.31-.57-2.65-.57-2.86 0-4.85 1.45-5.96 4.35L3 15.4Zm6.96-9.25c1.18-.93 2.65-1.4 4.4-1.4 1.28 0 2.54.24 3.8.72l-.58 1.51c-1.03-.36-2.1-.54-3.22-.54-1.34 0-2.47.34-3.37 1.02Z" /></Svg>;
+}
+
+function GitIcon() {
+  return <Svg><path fill="currentColor" d="M22.7 10.4 13.6 1.3a1.1 1.1 0 0 0-1.55 0l-1.9 1.9 2.4 2.4a2.57 2.57 0 0 1 3.3 3.3l2.3 2.3a2.57 2.57 0 1 1-1.46 1.46l-2.15-2.15v5.65a2.57 2.57 0 1 1-2.03.07V10.5a2.57 2.57 0 0 1-1.4-3.37L8.8 4.82 1.3 12.3a1.1 1.1 0 0 0 0 1.55l9.1 9.1a1.1 1.1 0 0 0 1.55 0l10.75-10.76a1.1 1.1 0 0 0 0-1.55Z" /></Svg>;
 }
 
 export default App;
