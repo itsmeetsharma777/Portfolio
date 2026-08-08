@@ -637,42 +637,304 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (max-width: 620px) {
-  .hero-stage { padding-inline: 18px; }
-  .availability-banner { min-height: 36px; padding-inline: 13px; justify-content: flex-start; font-size: 0.63rem; }
-  .availability-action { display: none; }
-  .site-header { min-height: 64px; }
-  .header-email { font-size: 0.66rem; }
-  .hero-copy h1 { font-size: clamp(3.2rem, 14vw, 4.9rem); }
-  .hero-copy h1 em { max-width: 11ch; margin-top: 6px; }
-  .hero-description { max-width: 31ch; font-size: 0.96rem; }
-  .hero-machine { right: -48%; bottom: 1%; width: 112vw; opacity: 0.4; }
-  .machine-caption { display: none; }
-  .hero-foot { grid-template-columns: auto 1fr auto; }
-  .hero-socials { gap: 9px; }
+
+  /* ================================
+     MOBILE HERO
+  ================================= */
+
+  .hero-stage {
+    min-height: 100svh;
+    padding-inline: 18px;
+    padding-bottom: 18px;
+  }
+
+  /* Availability bar */
+  .availability-banner {
+    min-height: 36px;
+    padding-inline: 13px;
+    justify-content: flex-start;
+    font-size: 0.63rem;
+    white-space: nowrap;
+  }
+
+  .availability-action {
+    display: none;
+  }
+
+  /* Header */
+  .site-header {
+    min-height: 64px;
+  }
+
+  .wordmark {
+    font-size: 1.2rem;
+  }
+
+  .header-email {
+    font-size: 0.66rem;
+  }
+
+
+  /* ================================
+     HERO HEADING
+  ================================= */
+
+  .hero-copy {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 4px;
+  }
+
+  .hero-copy h1 {
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(2.7rem, 12vw, 4.2rem);
+    line-height: 0.96;
+    letter-spacing: -0.075em;
+  }
+
+  /*
+     IMPORTANT:
+     Prevent "Meet + photo + Sharma"
+     from overflowing the screen.
+  */
+  .hero-name {
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    gap: 0.10em;
+    white-space: nowrap;
+  }
+
+  .inline-portrait {
+    width: 0.82em;
+    height: 0.82em;
+    flex: 0 0 0.82em;
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(123, 157, 255, 0.24);
+  }
+
+  /* Full Stack */
+  .hero-copy h1 > span {
+    max-width: 100%;
+  }
+
+  /* Developer */
+  .hero-copy h1 strong {
+    max-width: 100%;
+  }
+
+  /* Italic tagline */
+  .hero-copy h1 em {
+    max-width: 11ch;
+    margin-top: 6px;
+    font-size: 0.72em;
+  }
+
+
+  /* ================================
+     DESCRIPTION
+  ================================= */
+
+  .hero-description {
+    width: 100%;
+    max-width: 31ch;
+    margin-top: 20px;
+    padding-inline: 4px;
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+
+  /* ================================
+     BUTTONS
+  ================================= */
+
+  .hero-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hero-actions-main {
+    width: 100%;
+    margin-top: 22px;
+  }
+
+  .hero-actions .button {
+    width: 100%;
+    justify-content: center;
+    min-height: 52px;
+    padding-inline: 16px;
+  }
+
+
+  /* ================================
+     SOCIAL ICONS
+  ================================= */
+
+  .hero-socials {
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .hero-socials > a:not(.hero-talk-link) {
+    width: 30px;
+    height: 30px;
+  }
+
+
+  /* ================================
+     DECORATIVE MACHINE
+  ================================= */
+
+  .hero-machine {
+    right: -48%;
+    bottom: 1%;
+    width: 112vw;
+    opacity: 0.32;
+    pointer-events: none;
+  }
+
+  .machine-caption {
+    display: none;
+  }
+
+
+  /* ================================
+     HERO FOOT
+  ================================= */
+
+  .hero-foot {
+    grid-template-columns: auto 1fr auto;
+    gap: 9px;
+    font-size: 0.58rem;
+  }
+
+  .scroll-line {
+    min-width: 30px;
+  }
+
+
+  /* ================================
+     SECTIONS
+  ================================= */
+
   .section-shell,
-  .contact-section { padding: 82px 18px; }
-  .section-shell::after { left: 18px; }
-  .section-shell::before { width: 90vw; right: -46%; }
+  .contact-section {
+    padding: 82px 18px;
+  }
+
+  .section-shell::after {
+    left: 18px;
+  }
+
+  .section-shell::before {
+    width: 90vw;
+    right: -46%;
+  }
+
   .intro-layout h2,
-  .section-heading-row h2 { font-size: clamp(2.7rem, 12.5vw, 4.2rem); }
-  .fact-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .fact { min-height: 142px; padding: 17px; }
-  .fact strong { font-size: 2.55rem; }
-  .fact span { margin-top: 20px; font-size: 0.7rem; }
-  .project-card { grid-template-columns: 44px 1fr; }
-  .project-number { padding: 22px 10px; }
-  .project-content { padding: 70px 20px 34px 8px; }
-  .project-content h3 { font-size: 3.2rem; }
-  .project-type span { display: block; margin: 7px 0 0; }
-  .project-description { font-size: 0.96rem; }
-  .project-art { inset: 0; height: 190px; opacity: 0.28; }
-  .social-links { grid-template-columns: 1fr; }
+  .section-heading-row h2 {
+    font-size: clamp(2.7rem, 12.5vw, 4.2rem);
+  }
+
+
+  /* ================================
+     FACTS
+  ================================= */
+
+  .fact-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .fact {
+    min-height: 142px;
+    padding: 17px;
+  }
+
+  .fact strong {
+    font-size: 2.55rem;
+  }
+
+  .fact span {
+    margin-top: 20px;
+    font-size: 0.7rem;
+  }
+
+
+  /* ================================
+     PROJECTS
+  ================================= */
+
+  .project-card {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .project-number {
+    padding: 22px 10px;
+  }
+
+  .project-content {
+    padding: 70px 20px 34px 8px;
+  }
+
+  .project-content h3 {
+    font-size: 3.2rem;
+  }
+
+  .project-type span {
+    display: block;
+    margin: 7px 0 0;
+  }
+
+  .project-description {
+    font-size: 0.96rem;
+  }
+
+  .project-art {
+    inset: 0;
+    height: 190px;
+    opacity: 0.28;
+  }
+
+
+  /* ================================
+     SOCIAL LINKS
+  ================================= */
+
+  .social-links {
+    grid-template-columns: 1fr;
+  }
+
   .social-link:nth-child(odd),
-  .social-link:nth-child(even) { padding-inline: 0; }
-  .social-link { grid-template-columns: 28px 1fr 16px; }
-  .social-handle { display: none; }
-  .education-card div { flex-direction: column; gap: 8px; }
-  .education-card div span + span { padding-left: 0; border-left: 0; }
+  .social-link:nth-child(even) {
+    padding-inline: 0;
+  }
+
+  .social-link {
+    grid-template-columns: 28px 1fr 16px;
+  }
+
+  .social-handle {
+    display: none;
+  }
+
+
+  /* ================================
+     EDUCATION
+  ================================= */
+
+  .education-card div {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .education-card div span + span {
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
