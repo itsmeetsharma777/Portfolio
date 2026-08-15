@@ -68,6 +68,7 @@ const projects = [
     name: "EduSync",
     type: "Full Stack Web Application",
     date: "September 2025",
+    url: "https://edu-sync-omega-ebon.vercel.app/",
     description:
       "A personalized student progress tracker informed by attendance patterns and learning data, designed to make progress easier to understand.",
     stack: ["React", "Node.js", "Express", "MongoDB"],
@@ -292,24 +293,41 @@ function App() {
           <p>Two focused builds across web development, analytics, and physical safety.</p>
         </div>
         <div className="project-list">
-          {projects.map((project) => (
-            <article className={`project-card ${project.accent}`} key={project.name}>
-              <div className="project-number">{project.number}</div>
-              <div className="project-content">
-                <p className="project-type">{project.type} <span>{project.date}</span></p>
-                <h3>{project.name}</h3>
-                <p className="project-description">{project.description}</p>
-                <div className="project-stack">
-                  {project.stack.map((item) => <span key={item}>{item}</span>)}
-                </div>
-              </div>
-              <div className="project-art" aria-hidden="true">
-                <span className="project-orbit" />
-                <span className="project-pulse" />
-                <span className="project-grid" />
-              </div>
-            </article>
-          ))}
+{projects.map((project) => (
+  <a
+    className={`project-card ${project.accent}`}
+    key={project.name}
+    href={project.url}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <div className="project-number">{project.number}</div>
+
+    <div className="project-content">
+      <p className="project-type">
+        {project.type} <span>{project.date}</span>
+      </p>
+
+      <h3>{project.name}</h3>
+
+      <p className="project-description">
+        {project.description}
+      </p>
+
+      <div className="project-stack">
+        {project.stack.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
+    </div>
+
+    <div className="project-art" aria-hidden="true">
+      <span className="project-orbit" />
+      <span className="project-pulse" />
+      <span className="project-grid" />
+    </div>
+  </a>
+))}
         </div>
       </section>
 
