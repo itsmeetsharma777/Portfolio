@@ -77,7 +77,7 @@ const projects = [
     description:
     "A full-stack warranty management platform that helps users securely store, organize, and track product warranties, making important warranty details easy to access when needed.",
     stack: ["React", "Node.js", "Express", "MongoDB", "JWT", "REST API"],    accent: "project-iot",
-    href: "https:bill-nest-gamma.vercel.app",
+    href: "https://bill-nest-gamma.vercel.app",
   },
   {
     number: "02",
