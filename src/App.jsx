@@ -77,10 +77,8 @@ const projects = [
     description:
       "A personalized student progress tracker informed by attendance patterns and learning data, designed to make progress easier to understand.",
     stack: ["React", "Node.js", "Express", "MongoDB"],
-    accent: "project-education",
-
-    // CHANGE THIS URL
-    href: "https://bill-nest-gamma.vercel.app",
+    accent: "project-iot",
+    href: "https:bill-nest-gamma.vercel.app",
   },
   {
     number: "02",
@@ -91,9 +89,7 @@ const projects = [
       "A personalized student progress tracker informed by attendance patterns and learning data, designed to make progress easier to understand.",
     stack: ["React", "Node.js", "Express", "MongoDB"],
     accent: "project-education",
-
-    // CHANGE THIS URL
-    href: "https://edu-sync-omega-ebon.vercel.app/",
+    href: "https://edu-sync-omega-ebon.vercel.app",
   },
   {
     number: "03",
@@ -103,10 +99,7 @@ const projects = [
     description:
       "A home-safety system that monitors gas continuously, activates exhaust fans, triggers alarms, and sends timely alerts.",
     stack: ["Arduino", "MQ-2 Sensor", "C++", "Relay Module"],
-    accent: "project-iot",
-
-    // CHANGE THIS URL
-   
+    accent: "project-iot"
   },
 ];
 
