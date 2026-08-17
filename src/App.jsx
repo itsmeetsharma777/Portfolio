@@ -93,7 +93,7 @@ const projects = [
     accent: "project-education",
 
     // CHANGE THIS URL
-    href: "https:edu-sync-omega-ebon.vercel.app",
+    href: "https://edu-sync-omega-ebon.vercel.app/",
   },
   {
     number: "03",
