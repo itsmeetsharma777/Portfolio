@@ -75,9 +75,8 @@ const projects = [
     type: "Full Stack Web Application",
     date: "July 2026",
     description:
-      "A personalized student progress tracker informed by attendance patterns and learning data, designed to make progress easier to understand.",
-    stack: ["React", "Node.js", "Express", "MongoDB"],
-    accent: "project-iot",
+    "A full-stack warranty management platform that helps users securely store, organize, and track product warranties, making important warranty details easy to access when needed.",
+    stack: ["React", "Node.js", "Express", "MongoDB", "JWT", "REST API"],    accent: "project-iot",
     href: "https:bill-nest-gamma.vercel.app",
   },
   {
