@@ -537,6 +537,7 @@ a { -webkit-tap-highlight-color: transparent; }
 .project-card:hover { border-color: rgba(123, 157, 255, 0.8); box-shadow: 12px 12px 0 rgba(78, 120, 235, 0.2); }
 .project-card:nth-child(1) { transform: translateX(calc((1 - var(--scene-progress)) * -10vw)); }
 .project-card:nth-child(2) { transform: translateX(calc((1 - var(--scene-progress)) * 10vw)); }
+.project-card:nth-child(3) { transform: translateX(calc((1 - var(--scene-progress)) * -10vw)); }
 .project-card { opacity: calc(0.84 + (var(--scene-progress) * 0.16)); }
 
 .project-number { padding: 30px; color: var(--coral); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; }
