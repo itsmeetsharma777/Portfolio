@@ -385,7 +385,7 @@ function App() {
         <div className="stats-grid">
           <Stat number="2028" label="Expected graduation" />
           <Stat number="10+" label="Projects built" />
-          <Stat number="50+" label="DSA problems solved" />
+          <Stat number="100+" label="DSA problems solved" />
           <Stat number="SIH" label="Hackathon participant" />
         </div>
       </section>
