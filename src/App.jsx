@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 /* =========================================================
    DATA
@@ -792,6 +793,7 @@ function App() {
           <span>BUILT WITH REACT</span>
         </div>
       </footer>
+      <Analytics />
     </main>
   );
 }
